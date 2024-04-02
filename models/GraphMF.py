@@ -42,12 +42,12 @@ class GraphMF(torch.nn.Module):
         self.args = args
         super(GraphMF, self).__init__()
         try:
-            userg = pickle.load(open('./models/userg.pkl', 'rb'))
-            servg = pickle.load(open('./models/servg.pkl', 'rb'))
+            userg = pickle.load(open('./models/pretrain/userg.pkl', 'rb'))
+            servg = pickle.load(open('./models/pretrain/servg.pkl', 'rb'))
         except:
             user_lookup, serv_lookup, userg, servg = create_graph()
-            pickle.dump(userg, open('./models/userg.pkl', 'wb'))
-            pickle.dump(servg, open('./models/servg.pkl', 'wb'))
+            pickle.dump(userg, open('./models/pretrain/userg.pkl', 'wb'))
+            pickle.dump(servg, open('./models/pretrain/servg.pkl', 'wb'))
         self.usergraph, self.servgraph = userg, servg
         self.dim = args.dimension
         self.order = args.order

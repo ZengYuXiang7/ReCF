@@ -11,6 +11,7 @@ from tqdm import *
 
 from models.CSMF import CSMF
 from models.GATCF import GATCF
+from models.GATCF2 import GATCF2
 from models.GraphMF import GraphMF
 from models.MF import PureMF
 from models.NeuCF import NeuCF
@@ -122,7 +123,10 @@ class Model(torch.nn.Module):
         if self.args.model == 'GraphMF':
             self.model = GraphMF(args)
         elif self.args.model == 'GATCF':
-            self.model = GATCF(args)
+            if self.args.agg is not None:
+                self.model = GATCF2(args)
+            elif self.args.agg is None:
+                self.model = GATCF(args)
         elif self.args.model == 'HTCF':
             # self.model = HyperModel(train_graph, args)
             self.model = HTCF(train_graph, 339, 5825, args)
@@ -132,6 +136,8 @@ class Model(torch.nn.Module):
             self.model = NeuCF(args)
         elif self.args.model == 'CSMF':
             self.model = CSMF(args)
+        else:
+            raise NotImplementedError
 
     def forward(self, inputs, test=False):
         userIdx, servIdx = inputs
