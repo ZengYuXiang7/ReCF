@@ -2,14 +2,16 @@
 
 # 定义变量
 run_name='Experiment'
-rounds=5 epochs=300
+rounds=1 epochs=100 device='cpu'
 batch_size=256 learning_rate=0.001 decay=0.001
 experiment=0 record=1 program_test=0 verbose=1
 dimensions="32"
 datasets="rt"
 densities="0.10"
 py_files="run_experiment"
-models="GATCF2"
+models="GATCF"
+#aggs="cat mean add"
+aggs="cat"
 
 for py_file in $py_files
 do
@@ -21,7 +23,9 @@ do
             do
                 for density in $densities
                 do
-                    python ./$py_file.py \
+                    for agg in $aggs
+                    do
+                        python ./$py_file.py \
                           --logger $run_name \
                           --rounds $rounds \
                           --density $density \
@@ -36,7 +40,9 @@ do
                           --dimension $dim \
                           --experiment $experiment \
                           --record $record \
-                          --verbose $verbose
+                          --verbose $verbose \
+                          --agg $agg
+                    done
                 done
             done
         done

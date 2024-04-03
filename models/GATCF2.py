@@ -82,8 +82,9 @@ class GATCF2(torch.nn.Module):
             # print(user_embeds.shape, serv_embeds.shape)
             estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
         elif self.args.agg == 'cat':
-            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx].unsqueeze(0), user_embeds[userIdx].unsqueeze(0)])
-            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx].unsqueeze(0), serv_embeds[servIdx].unsqueeze(0)])
+            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx], user_embeds[userIdx]], dim=1)
+            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx], serv_embeds[servIdx]], dim=1)
+            # print(user_embeds.shape, serv_embeds.shape)
             estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
 
         return estimated
