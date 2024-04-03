@@ -66,9 +66,28 @@ class GATCF(torch.nn.Module):
         user_embeds = self.user_embeds(Index)
         Index = torch.arange(self.servgraph.number_of_nodes()).to(self.args.device)
         serv_embeds = self.serv_embeds(Index)
-        user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx]
-        serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx]
-        estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        if self.args.agg == 'add':
+            user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx] + user_embeds[userIdx]
+            serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx] + serv_embeds[servIdx]
+            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        elif self.args.agg == 'mean':
+            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx].unsqueeze(0),
+                                     user_embeds[userIdx].unsqueeze(0)]).mean(0)
+            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx].unsqueeze(0),
+                                     serv_embeds[servIdx].unsqueeze(0)]).mean(0)
+            # print(user_embeds.shape, serv_embeds.shape)
+            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        elif self.args.agg == 'cat':
+            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx], user_embeds[userIdx]],
+                                    dim=1)
+            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx], serv_embeds[servIdx]],
+                                    dim=1)
+            # print(user_embeds.shape, serv_embeds.shape)
+            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        else:
+            user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx]
+            serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx]
+            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
         return estimated
 
 

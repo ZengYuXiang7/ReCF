@@ -1,0 +1,46 @@
+INFO:GATCF:|2024-04-04 00:39:28| {'ablation': 0,
+ 'agg': 'cat',
+ 'bs': 256,
+ 'classification': 0,
+ 'config_path': '/home/yxzeng/code_python/HyperCF/utils/../default_config.yaml',
+ 'dataset': 'rt',
+ 'debug': 0,
+ 'decay': 0.001,
+ 'density': 0.1,
+ 'device': 'cpu',
+ 'dimension': 32,
+ 'epochs': 100,
+ 'experiment': 1,
+ 'head_num': 2,
+ 'hyperNum': 128,
+ 'log': <utils.logger.Logger object at 0x7f687018fd90>,
+ 'logger': 'Experiment',
+ 'loss_func': 'L1Loss',
+ 'lr': 0.001,
+ 'model': 'GATCF',
+ 'num_layers': 2,
+ 'optim': 'AdamW',
+ 'order': 2,
+ 'path': './datasets/',
+ 'patience': 10,
+ 'program_test': 0,
+ 'record': 0,
+ 'rounds': 1,
+ 'saved': 1,
+ 'seed': 0,
+ 'serv_num': 5825,
+ 'user_num': 339,
+ 'verbose': 1
+INFO:GATCF:|2024-04-04 00:39:28| ********************Experiment Start*******************
+INFO:GATCF:|2024-04-04 00:45:25| Round=1 BestEpoch=31 MAE=0.3295 RMSE=1.2243 NMAE=0.3628 NRMSE=0.5640 Training_time=202.3 
+INFO:GATCF:|2024-04-04 00:45:25| Acc = [1%=0.0446, 5%=0.2082, 10%=0.3688]
+INFO:GATCF:|2024-04-04 00:45:25| ********************Experiment Results:*******************
+INFO:GATCF:|2024-04-04 00:45:25| MAE: 0.3295 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| RMSE: 1.2243 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| NMAE: 0.3628 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| NRMSE: 0.5640 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| TIME: 202.2991 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| Acc1: 0.0446 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| Acc5: 0.2082 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| Acc10: 0.3688 ± 0.000
+INFO:GATCF:|2024-04-04 00:45:25| ********************Experiment Success********************

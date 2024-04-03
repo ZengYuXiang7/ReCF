@@ -123,10 +123,7 @@ class Model(torch.nn.Module):
         if self.args.model == 'GraphMF':
             self.model = GraphMF(args)
         elif self.args.model == 'GATCF':
-            if self.args.agg is not None:
-                self.model = GATCF2(args)
-            elif self.args.agg is None:
-                self.model = GATCF(args)
+            self.model = GATCF(args)
         elif self.args.model == 'HTCF':
             # self.model = HyperModel(train_graph, args)
             self.model = HTCF(train_graph, 339, 5825, args)

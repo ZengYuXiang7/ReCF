@@ -11,7 +11,7 @@ densities="0.10"
 py_files="run_experiment"
 models="GATCF"
 #aggs="cat mean add"
-aggs="cat"
+aggs="None cat mean add"
 
 for py_file in $py_files
 do

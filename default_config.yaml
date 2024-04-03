@@ -31,7 +31,7 @@ program_test: 0
 
 # Hyperparameter
 order: 2
-head_num: 2
+head_num: 1
 hyperNum: 128
 
 user_num: 339
@@ -40,7 +40,7 @@ num_layers: 2
 
 dimension: 32
 
-agg: 'mean'
+agg: None
 # Other configuration
 ablation: 0
 classification: 0
