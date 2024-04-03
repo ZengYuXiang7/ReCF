@@ -1,0 +1,51 @@
+INFO:GATCF:|2024-04-02 16:11:39| {'ablation': 0,
+ 'bs': 256,
+ 'classification': 0,
+ 'config_path': '/home/yxzeng/code_python/HyperCF/utils/../default_config.yaml',
+ 'dataset': 'tp',
+ 'debug': 0,
+ 'decay': 0.001,
+ 'density': 0.01,
+ 'device': 'cuda',
+ 'dimension': 32,
+ 'epochs': 300,
+ 'experiment': 1,
+ 'head_num': 2,
+ 'log': <utils.logger.Logger object at 0x7f5c5c5652e0>,
+ 'logger': 'Experiment',
+ 'loss_func': 'L1Loss',
+ 'lr': 0.001,
+ 'model': 'GATCF',
+ 'optim': 'AdamW',
+ 'order': 1,
+ 'path': './datasets/',
+ 'patience': 10,
+ 'program_test': 1,
+ 'record': 1,
+ 'rounds': 5,
+ 'saved': 1,
+ 'seed': 0,
+ 'serv_num': 5825,
+ 'user_num': 339,
+ 'verbose': 1
+INFO:GATCF:|2024-04-02 16:11:39| ********************Experiment Start*******************
+INFO:GATCF:|2024-04-02 16:13:50| Round=1 BestEpoch=51 MAE=22.1675 RMSE=67.4978 NMAE=0.4664 NRMSE=0.5603 Training_time=34.1 
+INFO:GATCF:|2024-04-02 16:13:50| Acc = [1%=0.0180, 5%=0.0892, 10%=0.1760]
+INFO:GATCF:|2024-04-02 16:15:36| Round=2 BestEpoch=40 MAE=22.1084 RMSE=67.6251 NMAE=0.4649 NRMSE=0.5610 Training_time=26.4 
+INFO:GATCF:|2024-04-02 16:15:36| Acc = [1%=0.0168, 5%=0.0845, 10%=0.1681]
+INFO:GATCF:|2024-04-02 16:17:33| Round=3 BestEpoch=47 MAE=22.4117 RMSE=68.7423 NMAE=0.4714 NRMSE=0.5703 Training_time=30.7 
+INFO:GATCF:|2024-04-02 16:17:33| Acc = [1%=0.0175, 5%=0.0872, 10%=0.1721]
+INFO:GATCF:|2024-04-02 16:19:13| Round=4 BestEpoch=39 MAE=22.5889 RMSE=68.9127 NMAE=0.4749 NRMSE=0.5718 Training_time=25.2 
+INFO:GATCF:|2024-04-02 16:19:13| Acc = [1%=0.0174, 5%=0.0864, 10%=0.1709]
+INFO:GATCF:|2024-04-02 16:21:35| Round=5 BestEpoch=61 MAE=22.1795 RMSE=67.2830 NMAE=0.4663 NRMSE=0.5579 Training_time=40.4 
+INFO:GATCF:|2024-04-02 16:21:35| Acc = [1%=0.0181, 5%=0.0906, 10%=0.1783]
+INFO:GATCF:|2024-04-02 16:21:35| ********************Experiment Results:*******************
+INFO:GATCF:|2024-04-02 16:21:35| MAE: 22.2912 ± 0.181
+INFO:GATCF:|2024-04-02 16:21:35| RMSE: 68.0122 ± 0.676
+INFO:GATCF:|2024-04-02 16:21:35| NMAE: 0.4688 ± 0.003
+INFO:GATCF:|2024-04-02 16:21:35| NRMSE: 0.5643 ± 0.005
+INFO:GATCF:|2024-04-02 16:21:35| TIME: 31.3657 ± 5.530
+INFO:GATCF:|2024-04-02 16:21:35| Acc1: 0.0176 ± 0.000
+INFO:GATCF:|2024-04-02 16:21:35| Acc5: 0.0876 ± 0.002
+INFO:GATCF:|2024-04-02 16:21:35| Acc10: 0.1731 ± 0.003
+INFO:GATCF:|2024-04-02 16:21:35| ********************Experiment Success********************

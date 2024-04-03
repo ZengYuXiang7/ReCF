@@ -1,0 +1,53 @@
+INFO:NeuCF:|2024-04-03 11:11:04| {'ablation': 0,
+ 'bs': 256,
+ 'classification': 0,
+ 'config_path': '/home/yxzeng/code_python/HyperCF/utils/../default_config.yaml',
+ 'dataset': 'tp',
+ 'debug': 0,
+ 'decay': 0.001,
+ 'density': 0.05,
+ 'device': 'cpu',
+ 'dimension': 32,
+ 'epochs': 300,
+ 'experiment': 1,
+ 'head_num': 2,
+ 'hyperNum': 128,
+ 'log': <utils.logger.Logger object at 0x7f77118f2940>,
+ 'logger': 'Experiment',
+ 'loss_func': 'L1Loss',
+ 'lr': 0.001,
+ 'model': 'NeuCF',
+ 'num_layers': 2,
+ 'optim': 'AdamW',
+ 'order': 2,
+ 'path': './datasets/',
+ 'patience': 10,
+ 'program_test': 1,
+ 'record': 1,
+ 'rounds': 5,
+ 'saved': 1,
+ 'seed': 0,
+ 'serv_num': 5825,
+ 'user_num': 339,
+ 'verbose': 1
+INFO:NeuCF:|2024-04-03 11:11:04| ********************Experiment Start*******************
+INFO:NeuCF:|2024-04-03 11:13:28| Round=1 BestEpoch=60 MAE=19.5978 RMSE=57.1787 NMAE=0.4123 NRMSE=0.4745 Training_time=65.4 
+INFO:NeuCF:|2024-04-03 11:13:28| Acc = [1%=0.0133, 5%=0.0661, 10%=0.1313]
+INFO:NeuCF:|2024-04-03 11:19:31| Round=2 BestEpoch=91 MAE=22.1903 RMSE=61.8962 NMAE=0.4670 NRMSE=0.5138 Training_time=149.5 
+INFO:NeuCF:|2024-04-03 11:19:31| Acc = [1%=0.0125, 5%=0.0627, 10%=0.1246]
+INFO:NeuCF:|2024-04-03 11:23:12| Round=3 BestEpoch=72 MAE=19.6094 RMSE=56.1961 NMAE=0.4124 NRMSE=0.4662 Training_time=100.3 
+INFO:NeuCF:|2024-04-03 11:23:12| Acc = [1%=0.0136, 5%=0.0681, 10%=0.1355]
+INFO:NeuCF:|2024-04-03 11:26:40| Round=4 BestEpoch=67 MAE=18.9911 RMSE=56.7566 NMAE=0.3994 NRMSE=0.4710 Training_time=93.2 
+INFO:NeuCF:|2024-04-03 11:26:40| Acc = [1%=0.0153, 5%=0.0757, 10%=0.1502]
+INFO:NeuCF:|2024-04-03 11:30:01| Round=5 BestEpoch=64 MAE=19.3955 RMSE=58.3055 NMAE=0.4076 NRMSE=0.4833 Training_time=88.9 
+INFO:NeuCF:|2024-04-03 11:30:01| Acc = [1%=0.0153, 5%=0.0758, 10%=0.1508]
+INFO:NeuCF:|2024-04-03 11:30:01| ********************Experiment Results:*******************
+INFO:NeuCF:|2024-04-03 11:30:01| MAE: 19.9568 ± 1.138
+INFO:NeuCF:|2024-04-03 11:30:01| RMSE: 58.0666 ± 2.036
+INFO:NeuCF:|2024-04-03 11:30:01| NMAE: 0.4197 ± 0.024
+INFO:NeuCF:|2024-04-03 11:30:01| NRMSE: 0.4818 ± 0.016
+INFO:NeuCF:|2024-04-03 11:30:01| TIME: 99.4781 ± 27.613
+INFO:NeuCF:|2024-04-03 11:30:01| Acc1: 0.0140 ± 0.001
+INFO:NeuCF:|2024-04-03 11:30:01| Acc5: 0.0697 ± 0.005
+INFO:NeuCF:|2024-04-03 11:30:01| Acc10: 0.1385 ± 0.010
+INFO:NeuCF:|2024-04-03 11:30:01| ********************Experiment Success********************

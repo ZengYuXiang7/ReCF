@@ -1,0 +1,53 @@
+INFO:CSMF:|2024-04-03 05:34:38| {'ablation': 0,
+ 'bs': 256,
+ 'classification': 0,
+ 'config_path': '/home/yxzeng/code_python/HyperCF/utils/../default_config.yaml',
+ 'dataset': 'rt',
+ 'debug': 0,
+ 'decay': 0.001,
+ 'density': 0.075,
+ 'device': 'cpu',
+ 'dimension': 32,
+ 'epochs': 300,
+ 'experiment': 1,
+ 'head_num': 2,
+ 'hyperNum': 128,
+ 'log': <utils.logger.Logger object at 0x7f701b653820>,
+ 'logger': 'Experiment',
+ 'loss_func': 'L1Loss',
+ 'lr': 0.001,
+ 'model': 'CSMF',
+ 'num_layers': 2,
+ 'optim': 'AdamW',
+ 'order': 2,
+ 'path': './datasets/',
+ 'patience': 10,
+ 'program_test': 1,
+ 'record': 1,
+ 'rounds': 5,
+ 'saved': 1,
+ 'seed': 0,
+ 'serv_num': 5825,
+ 'user_num': 339,
+ 'verbose': 1
+INFO:CSMF:|2024-04-03 05:34:38| ********************Experiment Start*******************
+INFO:CSMF:|2024-04-03 05:36:32| Round=1 BestEpoch=18 MAE=0.4152 RMSE=1.3216 NMAE=0.4570 NRMSE=0.6087 Training_time=43.3 
+INFO:CSMF:|2024-04-03 05:36:32| Acc = [1%=0.0218, 5%=0.1076, 10%=0.2109]
+INFO:CSMF:|2024-04-03 05:38:44| Round=2 BestEpoch=19 MAE=0.4253 RMSE=1.3347 NMAE=0.4679 NRMSE=0.6142 Training_time=53.7 
+INFO:CSMF:|2024-04-03 05:38:44| Acc = [1%=0.0208, 5%=0.1035, 10%=0.2043]
+INFO:CSMF:|2024-04-03 05:40:57| Round=3 BestEpoch=19 MAE=0.4181 RMSE=1.3336 NMAE=0.4606 NRMSE=0.6148 Training_time=53.8 
+INFO:CSMF:|2024-04-03 05:40:57| Acc = [1%=0.0210, 5%=0.1043, 10%=0.2063]
+INFO:CSMF:|2024-04-03 05:43:14| Round=4 BestEpoch=20 MAE=0.4184 RMSE=1.3234 NMAE=0.4610 NRMSE=0.6100 Training_time=56.7 
+INFO:CSMF:|2024-04-03 05:43:14| Acc = [1%=0.0213, 5%=0.1052, 10%=0.2071]
+INFO:CSMF:|2024-04-03 05:45:18| Round=5 BestEpoch=17 MAE=0.4165 RMSE=1.3282 NMAE=0.4590 NRMSE=0.6123 Training_time=48.2 
+INFO:CSMF:|2024-04-03 05:45:18| Acc = [1%=0.0207, 5%=0.1030, 10%=0.2039]
+INFO:CSMF:|2024-04-03 05:45:18| ********************Experiment Results:*******************
+INFO:CSMF:|2024-04-03 05:45:18| MAE: 0.4187 ± 0.003
+INFO:CSMF:|2024-04-03 05:45:18| RMSE: 1.3283 ± 0.005
+INFO:CSMF:|2024-04-03 05:45:18| NMAE: 0.4611 ± 0.003
+INFO:CSMF:|2024-04-03 05:45:18| NRMSE: 0.6120 ± 0.002
+INFO:CSMF:|2024-04-03 05:45:18| TIME: 51.1264 ± 4.786
+INFO:CSMF:|2024-04-03 05:45:18| Acc1: 0.0211 ± 0.000
+INFO:CSMF:|2024-04-03 05:45:18| Acc5: 0.1047 ± 0.001
+INFO:CSMF:|2024-04-03 05:45:18| Acc10: 0.2065 ± 0.002
+INFO:CSMF:|2024-04-03 05:45:18| ********************Experiment Success********************

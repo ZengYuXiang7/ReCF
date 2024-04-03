@@ -1,0 +1,53 @@
+INFO:GraphMF:|2024-04-03 14:10:08| {'ablation': 0,
+ 'bs': 256,
+ 'classification': 0,
+ 'config_path': '/home/yxzeng/code_python/HyperCF/utils/../default_config.yaml',
+ 'dataset': 'tp',
+ 'debug': 0,
+ 'decay': 0.001,
+ 'density': 0.05,
+ 'device': 'cpu',
+ 'dimension': 32,
+ 'epochs': 300,
+ 'experiment': 1,
+ 'head_num': 2,
+ 'hyperNum': 128,
+ 'log': <utils.logger.Logger object at 0x7ff4eb0b3910>,
+ 'logger': 'Experiment',
+ 'loss_func': 'L1Loss',
+ 'lr': 0.001,
+ 'model': 'GraphMF',
+ 'num_layers': 2,
+ 'optim': 'AdamW',
+ 'order': 2,
+ 'path': './datasets/',
+ 'patience': 10,
+ 'program_test': 1,
+ 'record': 1,
+ 'rounds': 5,
+ 'saved': 1,
+ 'seed': 0,
+ 'serv_num': 5825,
+ 'user_num': 339,
+ 'verbose': 1
+INFO:GraphMF:|2024-04-03 14:10:08| ********************Experiment Start*******************
+INFO:GraphMF:|2024-04-03 14:12:57| Round=1 BestEpoch=43 MAE=13.5994 RMSE=46.5387 NMAE=0.2861 NRMSE=0.3862 Training_time=91.5 
+INFO:GraphMF:|2024-04-03 14:12:57| Acc = [1%=0.0335, 5%=0.1630, 10%=0.3041]
+INFO:GraphMF:|2024-04-03 14:18:05| Round=2 BestEpoch=51 MAE=13.8237 RMSE=47.9106 NMAE=0.2909 NRMSE=0.3977 Training_time=131.2 
+INFO:GraphMF:|2024-04-03 14:18:05| Acc = [1%=0.0338, 5%=0.1633, 10%=0.3032]
+INFO:GraphMF:|2024-04-03 14:21:42| Round=3 BestEpoch=44 MAE=13.7697 RMSE=47.2277 NMAE=0.2896 NRMSE=0.3918 Training_time=112.0 
+INFO:GraphMF:|2024-04-03 14:21:42| Acc = [1%=0.0322, 5%=0.1563, 10%=0.2933]
+INFO:GraphMF:|2024-04-03 14:25:00| Round=4 BestEpoch=39 MAE=13.7008 RMSE=47.3472 NMAE=0.2881 NRMSE=0.3930 Training_time=99.7 
+INFO:GraphMF:|2024-04-03 14:25:00| Acc = [1%=0.0339, 5%=0.1649, 10%=0.3070]
+INFO:GraphMF:|2024-04-03 14:28:49| Round=5 BestEpoch=47 MAE=13.8008 RMSE=47.8189 NMAE=0.2900 NRMSE=0.3964 Training_time=120.7 
+INFO:GraphMF:|2024-04-03 14:28:49| Acc = [1%=0.0341, 5%=0.1653, 10%=0.3065]
+INFO:GraphMF:|2024-04-03 14:28:49| ********************Experiment Results:*******************
+INFO:GraphMF:|2024-04-03 14:28:49| MAE: 13.7389 ± 0.081
+INFO:GraphMF:|2024-04-03 14:28:49| RMSE: 47.3686 ± 0.491
+INFO:GraphMF:|2024-04-03 14:28:49| NMAE: 0.2889 ± 0.001
+INFO:GraphMF:|2024-04-03 14:28:49| NRMSE: 0.3930 ± 0.004
+INFO:GraphMF:|2024-04-03 14:28:49| TIME: 111.0040 ± 14.231
+INFO:GraphMF:|2024-04-03 14:28:49| Acc1: 0.0335 ± 0.000
+INFO:GraphMF:|2024-04-03 14:28:49| Acc5: 0.1625 ± 0.003
+INFO:GraphMF:|2024-04-03 14:28:49| Acc10: 0.3028 ± 0.005
+INFO:GraphMF:|2024-04-03 14:28:49| ********************Experiment Success********************
