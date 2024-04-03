@@ -50,8 +50,13 @@ class GATCF2(torch.nn.Module):
 
         self.user_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
         self.serv_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
+        if self.args.agg == 'cat':
+            input_dim = 4 * args.dimension
+        else:
+            input_dim = 2 * args.dimension
+
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(2 * args.dimension, 128),
+            torch.nn.Linear(input_dim, 128),
             torch.nn.LayerNorm(128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 128),
@@ -75,6 +80,10 @@ class GATCF2(torch.nn.Module):
             user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx].unsqueeze(0), user_embeds[userIdx].unsqueeze(0)]).mean(0)
             serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx].unsqueeze(0), serv_embeds[servIdx].unsqueeze(0)]).mean(0)
             # print(user_embeds.shape, serv_embeds.shape)
+            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        elif self.args.agg == 'cat':
+            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx].unsqueeze(0), user_embeds[userIdx].unsqueeze(0)])
+            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx].unsqueeze(0), serv_embeds[servIdx].unsqueeze(0)])
             estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
 
         return estimated
