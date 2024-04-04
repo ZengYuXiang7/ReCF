@@ -9,9 +9,9 @@ dimensions="32"
 datasets="rt"
 densities="0.10"
 py_files="run_experiment"
-models="GATCF"
+models="GATCF2"
 #aggs="cat mean add"
-aggs="cat mean add"
+aggs="ncf "
 
 for py_file in $py_files
 do

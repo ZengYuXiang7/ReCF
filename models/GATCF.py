@@ -53,6 +53,7 @@ class GATCF(torch.nn.Module):
             input_dim = 4 * args.dimension
         else:
             input_dim = 2 * args.dimension
+
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(input_dim, 128),
             torch.nn.LayerNorm(128),
@@ -70,6 +71,7 @@ class GATCF(torch.nn.Module):
         user_embeds = self.user_embeds(Index)
         Index = torch.arange(self.servgraph.number_of_nodes()).to(self.args.device)
         serv_embeds = self.serv_embeds(Index)
+
         if self.args.agg == 'add':
             user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx] + user_embeds[userIdx]
             serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx] + serv_embeds[servIdx]
@@ -86,7 +88,6 @@ class GATCF(torch.nn.Module):
                                     dim=1)
             serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx], serv_embeds[servIdx]],
                                     dim=1)
-            # print(user_embeds.shape, serv_embeds.shape)
             estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
         else:
             user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx]

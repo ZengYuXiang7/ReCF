@@ -124,8 +124,9 @@ class Model(torch.nn.Module):
             self.model = GraphMF(args)
         elif self.args.model == 'GATCF':
             self.model = GATCF(args)
+        elif self.args.model == 'GATCF2':
+            self.model = GATCF2(args)
         elif self.args.model == 'HTCF':
-            # self.model = HyperModel(train_graph, args)
             self.model = HTCF(train_graph, 339, 5825, args)
         elif self.args.model == 'MF':
             self.model = PureMF(args)

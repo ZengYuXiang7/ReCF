@@ -40,7 +40,7 @@ num_layers: 2
 
 dimension: 32
 
-agg: None
+agg: 'ncf'
 # Other configuration
 ablation: 0
 classification: 0

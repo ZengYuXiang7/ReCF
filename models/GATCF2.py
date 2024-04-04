@@ -41,19 +41,17 @@ class GATCF2(torch.nn.Module):
             user_lookup, serv_lookup, userg, servg = create_graph()
             pickle.dump(userg, open('./models/pretrain/userg.pkl', 'wb'))
             pickle.dump(servg, open('./models/pretrain/servg.pkl', 'wb'))
+
         self.usergraph, self.servgraph = userg.to(self.args.device), servg.to(self.args.device)
         self.dim = args.dimension
-        self.user_embeds = torch.nn.Embedding(self.usergraph.number_of_nodes(), self.dim)
-        torch.nn.init.kaiming_normal_(self.user_embeds.weight)
-        self.serv_embeds = torch.nn.Embedding(self.servgraph.number_of_nodes(), self.dim)
-        torch.nn.init.kaiming_normal_(self.serv_embeds.weight)
+        self.user_embeds = torch.nn.Embedding(args.user_num, self.dim)
+        self.serv_embeds = torch.nn.Embedding(args.serv_num, self.dim)
 
+        self.user_graph_embeds = torch.nn.Embedding(self.usergraph.number_of_nodes(), self.dim)
+        self.serv_graph_embeds = torch.nn.Embedding(self.servgraph.number_of_nodes(), self.dim)
         self.user_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
         self.serv_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
-        if self.args.agg == 'cat':
-            input_dim = 4 * args.dimension
-        else:
-            input_dim = 2 * args.dimension
+        input_dim = 2 * args.dimension
 
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(input_dim, 128),
@@ -65,31 +63,28 @@ class GATCF2(torch.nn.Module):
             torch.nn.Linear(128, 1)
         )
 
-        self.cache = {}
+        torch.nn.init.kaiming_normal_(self.user_embeds.weight)
+        torch.nn.init.kaiming_normal_(self.serv_embeds.weight)
+        self.predict_layer = torch.nn.Linear(args.dimension * 1, 1)
+
+    def get_mf_embeds(self, userIdx, servIdx):
+        user_embeds = self.user_embeds(userIdx)
+        serv_embeds = self.serv_embeds(servIdx)
+        return user_embeds, serv_embeds
+    def get_graph_embeds(self, userIdx, servIdx):
+        Index = torch.arange(self.usergraph.number_of_nodes()).to(self.args.device)
+        user_embeds = self.user_graph_embeds(Index)
+        Index = torch.arange(self.servgraph.number_of_nodes()).to(self.args.device)
+        serv_embeds = self.serv_graph_embeds(Index)
+        user_graph_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx]
+        serv_graph_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx]
+        return user_graph_embeds, serv_graph_embeds
 
     def forward(self, userIdx, servIdx):
-        Index = torch.arange(self.usergraph.number_of_nodes()).to(self.args.device)
-        user_embeds = self.user_embeds(Index)
-        Index = torch.arange(self.servgraph.number_of_nodes()).to(self.args.device)
-        serv_embeds = self.serv_embeds(Index)
-        if self.args.agg == 'add':
-            user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx] + user_embeds[userIdx]
-            serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx] + serv_embeds[servIdx]
-            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
-        elif self.args.agg == 'mean':
-            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx].unsqueeze(0), user_embeds[userIdx].unsqueeze(0)]).mean(0)
-            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx].unsqueeze(0), serv_embeds[servIdx].unsqueeze(0)]).mean(0)
-            # print(user_embeds.shape, serv_embeds.shape)
-            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
-        elif self.args.agg == 'cat':
-            user_embeds = torch.cat([self.user_attention(self.usergraph, user_embeds)[userIdx], user_embeds[userIdx]], dim=1)
-            serv_embeds = torch.cat([self.serv_attention(self.servgraph, serv_embeds)[servIdx], serv_embeds[servIdx]], dim=1)
-            # print(user_embeds.shape, serv_embeds.shape)
-            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
-        else:
-            user_embeds = self.user_attention(self.usergraph, user_embeds)[userIdx]
-            serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx]
-            estimated = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1)).sigmoid().reshape(-1)
+        user_graph_embeds, serv_graph_embeds = self.get_graph_embeds(userIdx, servIdx)
+        user_embeds, serv_embeds = self.get_mf_embeds(userIdx, servIdx)
+        final_inputs = user_graph_embeds * serv_graph_embeds + user_embeds * serv_embeds
+        estimated = self.predict_layer(final_inputs)
         return estimated
 
 
