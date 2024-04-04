@@ -51,8 +51,8 @@ class GATCF2(torch.nn.Module):
         self.serv_graph_embeds = torch.nn.Embedding(self.servgraph.number_of_nodes(), self.dim)
         self.user_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
         self.serv_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
-        input_dim = 2 * args.dimension
 
+        input_dim = 4 * args.dimension
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(input_dim, 128),
             torch.nn.LayerNorm(128),
@@ -87,7 +87,7 @@ class GATCF2(torch.nn.Module):
         user_embeds, serv_embeds = self.get_mf_embeds(userIdx, servIdx)
         # final_inputs = user_graph_embeds * serv_graph_embeds + user_embeds * serv_embeds
         final_inputs = torch.cat([user_graph_embeds, serv_graph_embeds, user_embeds, serv_embeds], dim=-1)
-        estimated = self.predict_layer(final_inputs)
+        estimated = self.layers(final_inputs)
         return estimated
 
 
