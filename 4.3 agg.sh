@@ -4,14 +4,14 @@
 run_name='Experiment'
 rounds=1 epochs=100 device='cpu'
 batch_size=256 learning_rate=0.001 decay=0.001
-experiment=0 record=1 program_test=0 verbose=1
+experiment=0 record=0 program_test=0 verbose=1
 dimensions="32"
 datasets="rt"
 densities="0.10"
 py_files="run_experiment"
 models="GATCF"
 #aggs="cat mean add"
-aggs="None cat mean add"
+aggs="cat mean add"
 
 for py_file in $py_files
 do

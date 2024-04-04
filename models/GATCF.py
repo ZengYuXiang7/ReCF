@@ -49,8 +49,12 @@ class GATCF(torch.nn.Module):
 
         self.user_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
         self.serv_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
+        if self.args.agg == 'cat':
+            input_dim = 4 * args.dimension
+        else:
+            input_dim = 2 * args.dimension
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(2 * args.dimension, 128),
+            torch.nn.Linear(input_dim, 128),
             torch.nn.LayerNorm(128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 128),

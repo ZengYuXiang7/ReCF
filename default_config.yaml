@@ -3,7 +3,7 @@ seed: 0
 device: 'cpu'
 rounds: 5
 epochs: 300
-patience: 10
+patience: 15
 
 # Model
 logger: 'Run'
