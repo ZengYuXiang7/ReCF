@@ -65,12 +65,14 @@ class GATCF2(torch.nn.Module):
 
         torch.nn.init.kaiming_normal_(self.user_embeds.weight)
         torch.nn.init.kaiming_normal_(self.serv_embeds.weight)
-        self.predict_layer = torch.nn.Linear(args.dimension * 1, 1)
+
+        self.predict_layer = torch.nn.Linear(args.dimension * 4, 1)
 
     def get_mf_embeds(self, userIdx, servIdx):
         user_embeds = self.user_embeds(userIdx)
         serv_embeds = self.serv_embeds(servIdx)
         return user_embeds, serv_embeds
+
     def get_graph_embeds(self, userIdx, servIdx):
         Index = torch.arange(self.usergraph.number_of_nodes()).to(self.args.device)
         user_embeds = self.user_graph_embeds(Index)
@@ -83,7 +85,8 @@ class GATCF2(torch.nn.Module):
     def forward(self, userIdx, servIdx):
         user_graph_embeds, serv_graph_embeds = self.get_graph_embeds(userIdx, servIdx)
         user_embeds, serv_embeds = self.get_mf_embeds(userIdx, servIdx)
-        final_inputs = user_graph_embeds * serv_graph_embeds + user_embeds * serv_embeds
+        # final_inputs = user_graph_embeds * serv_graph_embeds + user_embeds * serv_embeds
+        final_inputs = torch.cat([user_graph_embeds, serv_graph_embeds, user_embeds, serv_embeds], dim=-1)
         estimated = self.predict_layer(final_inputs)
         return estimated
 
