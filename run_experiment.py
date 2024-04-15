@@ -153,7 +153,7 @@ class Model(torch.nn.Module):
         self.train()
         torch.set_grad_enabled(True)
         t1 = time.time()
-        for train_Batch in dataModule.train_loader:
+        for train_Batch in tqdm(dataModule.train_loader):
             inputs, value = train_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)

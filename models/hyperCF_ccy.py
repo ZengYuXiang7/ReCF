@@ -134,7 +134,7 @@ class HTCF(torch.nn.Module):
         newLat = torch.matmul(key, preNewLat)  # Head * N * d'
         newLat = newLat.permute(1, 0, 2).reshape(-1, self.dim)
         lats.append(newLat)
-        # return lats
+        return lats
 
 
     def hyper_gnn(self, random_embed, Embed_ini, hyper_embed):
@@ -145,7 +145,7 @@ class HTCF(torch.nn.Module):
         Key = self.prepareKey(Embed0)
         lats = [Embed0]
         for i in range(self.args.order):
-            self.propagate(lats, Key, Hyper_ini)
+            lats = self.propagate(lats, Key, Hyper_ini)
         lat = torch.sum(torch.stack(lats), dim=0)
         return lat
 
