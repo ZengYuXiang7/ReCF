@@ -17,6 +17,7 @@ from models.MF import PureMF
 from models.NeuCF import NeuCF
 from models.hyperCF import HyperModel
 from models.hyperCF_ccy import HTCF
+from models.hyperCF_conetxtgraph import HyperCF
 from utils.config import get_config
 from utils.dataloader import get_dataloaders
 from utils.logger import Logger
@@ -134,6 +135,8 @@ class Model(torch.nn.Module):
             self.model = NeuCF(args)
         elif self.args.model == 'CSMF':
             self.model = CSMF(args)
+        elif self.args.model == 'ZYX':
+            self.model = HyperCF(339, 5825, args)
         else:
             raise NotImplementedError
 

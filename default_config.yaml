@@ -8,7 +8,8 @@ patience: 15
 # Model
 logger: 'Run'
 dataset: 'rt'
-model: 'HTCF' # GraphMF
+#model: 'HTCF' # GraphMF
+model: 'ZYX' # GraphMF
 density: 0.10
 
 # Debug configuration

@@ -3,17 +3,41 @@
 
 import numpy as np
 import scipy.sparse as sp
+from dgl.nn.pytorch import SAGEConv
 from scipy.sparse import csr_matrix
 import torch
+import pickle
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from time import time
+from models.GATCF import create_graph
 
+class GraphSAGEConv(torch.nn.Module):
+    def __init__(self, graph, dim, order, args):
+        super(GraphSAGEConv, self).__init__()
+        self.args = args
+        self.order = order
+        self.graph = graph
+        self.layers = torch.nn.ModuleList([SAGEConv(dim, dim, aggregator_type='gcn') for _ in range(order)])
+        self.norms = torch.nn.ModuleList([torch.nn.LayerNorm(dim) for _ in range(order)])
+        self.acts = torch.nn.ModuleList([torch.nn.ELU() for _ in range(order)])
 
-class HTCF(torch.nn.Module):
-    def __init__(self, train_tensor, user_num, serv_num, args):
-        super(HTCF, self).__init__()
+    def forward(self, emebeds):
+        grpah = self.graph.to(self.args.device)
+        grpah.ndata['L0'] = emebeds
+        feats = grpah.ndata['L0']
+        for i, (layer, norm, act) in enumerate(zip(self.layers, self.norms, self.acts)):
+            feats = layer(grpah, feats).squeeze()
+            feats = norm(feats)
+            feats = act(feats)
+            grpah.ndata[f'L{i + 1}'] = feats
+        embeds = grpah.ndata[f'L{self.order}']
+        return embeds
+
+class HyperCF(torch.nn.Module):
+    def __init__(self, user_num, serv_num, args):
+        super(HyperCF, self).__init__()
         self.args = args
         self.user_num = user_num
         self.serv_num = serv_num
@@ -23,12 +47,25 @@ class HTCF(torch.nn.Module):
         self.head_num = args.head_num
         self.hyperNum = args.hyperNum
 
+        # Attention
         self.K = torch.nn.Parameter(torch.randn(self.dim, self.dim))
         self.VMapping = torch.nn.Parameter(torch.randn(self.dim, self.dim))
 
-        self.user_embeds = torch.nn.Embedding(user_num, self.dim)
-        self.serv_embeds = torch.nn.Embedding(serv_num, self.dim)
 
+        # 上下文图
+        try:
+           self.userg = pickle.load(open('./models/pretrain/userg.pkl', 'rb'))
+           self.servg = pickle.load(open('./models/pretrain/servg.pkl', 'rb'))
+        except:
+            user_lookup, serv_lookup, self.userg, self.servg = create_graph()
+            pickle.dump(self.userg, open('./models/pretrain/userg.pkl', 'wb'))
+            pickle.dump(self.servg, open('./models/pretrain/servg.pkl', 'wb'))
+
+        self.user_gcn = GraphSAGEConv(self.userg, self.dim, args.order, args)
+        self.serv_gcn = GraphSAGEConv(self.servg, self.dim, args.order, args)
+
+        self.user_embeds = torch.nn.Embedding(self.userg.number_of_nodes(), self.dim)
+        self.serv_embeds = torch.nn.Embedding(self.servg.number_of_nodes(), self.dim)
 
         self.fc1 = torch.nn.Linear(self.hyperNum, self.hyperNum)
         self.fc2 = torch.nn.Linear(self.hyperNum, self.hyperNum)
@@ -39,21 +76,20 @@ class HTCF(torch.nn.Module):
         self.hyperNum = args.hyperNum
         self.actorchunc = torch.nn.ReLU()  # 激活函数为ReLU
 
-        # 转换为稀疏张量表示
-        self.train_tensor = train_tensor
-        idx, data, shape = self.transToLsts(self.train_tensor)
-        tpidx, tpdata, tpshape = self.transToLsts(self.transpose(self.train_tensor))
-        self.adj = torch.sparse_coo_tensor(idx, data, shape)
-        self.tpadj = torch.sparse_coo_tensor(tpidx, tpdata, tpshape)
+        # 与SHT衔接
+        # idx, data, shape = self.transToLsts(self.train_tensor)
+        # tpidx, tpdata, tpshape = self.transToLsts(self.transpose(self.train_tensor))
+        # self.adj = torch.sparse_coo_tensor(idx, data, shape)
+        # self.tpadj = torch.sparse_coo_tensor(tpidx, tpdata, tpshape)
 
-        self.ineraction = torch.nn.Sequential(
-            torch.nn.Linear(2 * args.dimension, 128),
-            torch.nn.LayerNorm(128),
+        self.interaction = torch.nn.Sequential(
+            torch.nn.Linear(2 * args.dimension, args.dimension),
+            torch.nn.LayerNorm(args.dimension),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, 128),
-            torch.nn.LayerNorm(128),
+            torch.nn.Linear(args.dimension, args.dimension // 2),
+            torch.nn.LayerNorm(args.dimension // 2),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, 1)
+            torch.nn.Linear(args.dimension // 2, 1)
         )
 
         # 超图部分
@@ -97,6 +133,7 @@ class HTCF(torch.nn.Module):
             ulats.append(temulat)
             ilats.append(temilat)
         return ulats, ilats
+
 
     # 准备注意力机制中的key
     def prepareKey(self, nodeEmbed):
@@ -160,16 +197,19 @@ class HTCF(torch.nn.Module):
         return lat
 
     def forward(self, userIdx, itemIdx):
-        UIndex = torch.arange(339).to(self.args.device)
+        UIndex = torch.arange(self.userg.number_of_nodes()).to(self.args.device)
         user_embeds = self.user_embeds(UIndex)
-        SIndex = torch.arange(5825).to(self.args.device)
+        SIndex = torch.arange(self.servg.number_of_nodes()).to(self.args.device)
         serv_embeds = self.serv_embeds(SIndex)
-        u_gcn_lats, i_gcn_lats = self.GCN(user_embeds, serv_embeds, self.adj, self.tpadj)
+        # u_gcn_lats, i_gcn_lats = self.GCN(user_embeds, serv_embeds, self.adj, self.tpadj)
+
+        u_gcn_lats = self.user_gcn(user_embeds)
+        i_gcn_lats = self.serv_gcn(serv_embeds)
 
         user_embeds_now = self.hyper_gnn(self.uHyper, user_embeds, u_gcn_lats)[userIdx]
         serv_embeds_now = self.hyper_gnn(self.iHyper, serv_embeds, i_gcn_lats)[itemIdx]
 
-        estimated = self.ineraction(torch.cat((user_embeds_now, serv_embeds_now), dim=-1)).sigmoid().reshape(-1)
+        estimated = self.interaction(torch.cat((user_embeds_now, serv_embeds_now), dim=-1)).sigmoid().reshape(-1)
         return estimated
 
     def prepare_test_model(self):
