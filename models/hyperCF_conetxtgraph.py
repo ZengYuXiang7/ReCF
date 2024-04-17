@@ -208,6 +208,8 @@ class HyperCF(torch.nn.Module):
 
         user_embeds_now = self.hyper_gnn(self.uHyper, user_embeds, u_gcn_lats)[userIdx]
         serv_embeds_now = self.hyper_gnn(self.iHyper, serv_embeds, i_gcn_lats)[itemIdx]
+        # user_embeds_now = (user_embeds + u_gcn_lats)[userIdx]
+        # serv_embeds_now = (serv_embeds + i_gcn_lats)[itemIdx]
 
         estimated = self.interaction(torch.cat((user_embeds_now, serv_embeds_now), dim=-1)).sigmoid().reshape(-1)
         return estimated

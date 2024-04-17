@@ -71,7 +71,8 @@ class DataModule:
         quantile = np.percentile(tensor, q=100)
         tensor = tensor / (np.max(tensor))
         trainsize = int(np.prod(tensor.size) * args.density)
-        validsize = int((np.prod(tensor.size)) * 0.05)
+        # validsize = int((np.prod(tensor.size)) * 0.05)
+        validsize = int(np.prod(tensor.size) * (1 - args.density))
         rowIdx, colIdx = tensor.nonzero()
         p = np.random.permutation(len(rowIdx))
         rowIdx, colIdx = rowIdx[p], colIdx[p]
@@ -174,7 +175,7 @@ class Model(torch.nn.Module):
         val_loss = 0.
         preds = []
         reals = []
-        for valid_Batch in (dataModule.valid_loader):
+        for valid_Batch in tqdm(dataModule.valid_loader):
             inputs, value = valid_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)
