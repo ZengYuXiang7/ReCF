@@ -21,12 +21,16 @@ class HTCF(torch.nn.Module):
         self.dim = args.dimension
         self.head_num = args.head_num
         self.hyperNum = args.hyperNum
+
+        # what is the K!
         self.K = nn.Parameter(torch.randn(self.dim, self.dim))
+
 
         self.user_embeds = torch.nn.Embedding(user_num, self.dim)
         self.serv_embeds = torch.nn.Embedding(serv_num, self.dim)
 
         self.VMapping = nn.Parameter(torch.randn(self.dim, self.dim))
+
         self.fc1 = torch.nn.Linear(self.hyperNum, self.hyperNum)
         self.fc2 = torch.nn.Linear(self.hyperNum, self.hyperNum)
 
@@ -36,9 +40,6 @@ class HTCF(torch.nn.Module):
         self.hyperNum = args.hyperNum
         self.actorchunc = torch.nn.ReLU()  # 激活函数为ReLU
 
-        # 超图部分
-        self.uEmbed_ini = torch.nn.Parameter(torch.empty(self.user_num, self.dim))
-        self.iEmbed_ini = torch.nn.Parameter(torch.empty(self.serv_num, self.dim))
 
         # 转换为稀疏张量表示
         self.train_tensor = train_tensor
@@ -47,7 +48,7 @@ class HTCF(torch.nn.Module):
         self.adj = torch.sparse_coo_tensor(idx, data, shape)
         self.tpadj = torch.sparse_coo_tensor(tpidx, tpdata, tpshape)
 
-        self.layers = torch.nn.Sequential(
+        self.ineraction = torch.nn.Sequential(
             torch.nn.Linear(2 * args.dimension, 128),
             torch.nn.LayerNorm(128),
             torch.nn.ReLU(),
@@ -57,16 +58,13 @@ class HTCF(torch.nn.Module):
             torch.nn.Linear(128, 1)
         )
 
+
+        # 超图部分
         self.uHyper = torch.empty(self.hyperNum, self.dim)
         torch.nn.init.xavier_normal_(self.uHyper)
         self.iHyper = torch.empty(self.hyperNum, self.dim)
         torch.nn.init.xavier_normal_(self.iHyper)
 
-        self.init()
-
-    def init(self):
-        init.xavier_uniform_(self.uEmbed_ini)
-        init.xavier_uniform_(self.iEmbed_ini)
 
     def transpose(self, mat):
         coomat = sp.coo_matrix(mat)
@@ -105,14 +103,12 @@ class HTCF(torch.nn.Module):
         return ulats, ilats
 
 
-
     # 准备注意力机制中的key
     def prepareKey(self, nodeEmbed):
         key = torch.matmul(nodeEmbed, self.K)  # Matrix multiplication
         key = key.view(-1, self.head_num, self.dim // self.head_num)  # Reshape
         key = key.transpose(0, 1)  # Transpose to get [head_num, N, dimension // head_num]
         return key
-
 
     # key 被用于与最后一层的嵌入（lats[-1]）以及超图嵌入（hyper）相乘，从而进行信息的传播和聚合。
     def propagate(self, lats, key, hyper):
@@ -136,34 +132,36 @@ class HTCF(torch.nn.Module):
         lats.append(newLat)
         return lats
 
+    def hyper_gnn(self, edge_embeds, embeds, gcn_embeds):
 
-    def hyper_gnn(self, random_embed, Embed_ini, hyper_embed):
-        Hyper_ini = random_embed
-        Embed_gcn = torch.sum(torch.stack(hyper_embed[1:], dim=0), dim=0)
-        Embed_ini = Embed_ini
-        Embed0 = Embed_ini + Embed_gcn
+        Embed0 = embeds + gcn_embeds[-1]
+
+        # 3.2.1
         Key = self.prepareKey(Embed0)
+
+        # 3.2.2
         lats = [Embed0]
         for i in range(self.args.order):
-            lats = self.propagate(lats, Key, Hyper_ini)
-        lat = torch.sum(torch.stack(lats), dim=0)
-        return lat
+            lats = self.propagate(lats, Key, edge_embeds)
 
+        # 3.2.3
+        lat = torch.sum(torch.stack(lats), dim=0)
+
+        return lat
 
     def forward(self, userIdx, itemIdx):
         UIndex = torch.arange(339).to(self.args.device)
         user_embeds = self.user_embeds(UIndex)
         SIndex = torch.arange(5825).to(self.args.device)
         serv_embeds = self.serv_embeds(SIndex)
+        u_gcn_lats, i_gcn_lats = self.GCN(user_embeds, serv_embeds, self.adj, self.tpadj)
 
-        ulats, ilats = self.GCN(user_embeds, serv_embeds, self.adj, self.tpadj)
+        user_embeds_now = self.hyper_gnn(self.uHyper, user_embeds, u_gcn_lats)[userIdx]
+        serv_embeds_now = self.hyper_gnn(self.iHyper, serv_embeds, i_gcn_lats)[itemIdx]
 
-        user_embeds_now = self.hyper_gnn(self.uHyper, user_embeds, ulats)[userIdx]
-        serv_embeds_now = self.hyper_gnn(self.iHyper, serv_embeds, ilats)[itemIdx]
-
-        estimated = self.layers(torch.cat((user_embeds_now, serv_embeds_now), dim=-1)).sigmoid().reshape(-1)
-
+        estimated = self.ineraction(torch.cat((user_embeds_now, serv_embeds_now), dim=-1)).sigmoid().reshape(-1)
         return estimated
 
     def prepare_test_model(self):
         pass
+

@@ -168,10 +168,9 @@ class Model(torch.nn.Module):
         return loss, t2 - t1
 
     def valid_one_epoch(self, dataModule):
-        writeIdx = 0
         val_loss = 0.
-        preds = torch.zeros((len(dataModule.valid_loader.dataset),)).to(self.args.device)
-        reals = torch.zeros((len(dataModule.valid_loader.dataset),)).to(self.args.device)
+        preds = []
+        reals = []
         for valid_Batch in (dataModule.valid_loader):
             inputs, value = valid_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
@@ -180,17 +179,17 @@ class Model(torch.nn.Module):
             val_loss += self.loss_function(pred, value)
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
-            preds[writeIdx:writeIdx + len(pred)] = pred
-            reals[writeIdx:writeIdx + len(value)] = value
-            writeIdx += len(pred)
+            preds.append(pred)
+            reals.append(value)
+        reals = torch.cat(reals, dim=0)
+        preds = torch.cat(preds, dim=0)
         self.scheduler.step(val_loss)
-        valid_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
+        valid_error = ErrorMetrics(reals, preds, self.args)
         return valid_error
 
     def test_one_epoch(self, dataModule):
-        writeIdx = 0
-        preds = torch.zeros((len(dataModule.test_loader.dataset),)).to(self.args.device)
-        reals = torch.zeros((len(dataModule.test_loader.dataset),)).to(self.args.device)
+        preds = []
+        reals = []
         for test_Batch in (dataModule.test_loader):
             inputs, value = test_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
@@ -198,10 +197,11 @@ class Model(torch.nn.Module):
             pred = self.forward(inputs)
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
-            preds[writeIdx:writeIdx + len(pred)] = pred
-            reals[writeIdx:writeIdx + len(value)] = value
-            writeIdx += len(pred)
-        test_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
+            preds.append(pred)
+            reals.append(value)
+        reals = torch.cat(reals, dim=0)
+        preds = torch.cat(preds, dim=0)
+        test_error = ErrorMetrics(reals, preds, self.args)
         return test_error
 
 
