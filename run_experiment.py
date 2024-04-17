@@ -184,7 +184,7 @@ class Model(torch.nn.Module):
         reals = torch.cat(reals, dim=0)
         preds = torch.cat(preds, dim=0)
         self.scheduler.step(val_loss)
-        valid_error = ErrorMetrics(reals, preds, self.args)
+        valid_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
         return valid_error
 
     def test_one_epoch(self, dataModule):
@@ -201,7 +201,7 @@ class Model(torch.nn.Module):
             reals.append(value)
         reals = torch.cat(reals, dim=0)
         preds = torch.cat(preds, dim=0)
-        test_error = ErrorMetrics(reals, preds, self.args)
+        test_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
         return test_error
 
 
