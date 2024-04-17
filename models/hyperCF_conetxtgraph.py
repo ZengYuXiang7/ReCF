@@ -181,7 +181,7 @@ class HyperCF(torch.nn.Module):
 
     def hyper_gnn(self, edge_embeds, embeds, gcn_embeds):
 
-        Embed0 = embeds + gcn_embeds[-1]
+        Embed0 = embeds + gcn_embeds
 
         # 3.2.1
         Key = self.prepareKey(Embed0)
