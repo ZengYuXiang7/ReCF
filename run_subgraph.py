@@ -15,7 +15,6 @@ from models.GATCF2 import GATCF2
 from models.GraphMF import GraphMF
 from models.MF import PureMF
 from models.NeuCF import NeuCF
-from models.Subgraph import SubgraphCF
 from models.hyperCF import HyperModel
 from models.hyperCF_ccy import HTCF
 from models.hyperCF_conetxtgraph import HyperCF
@@ -72,8 +71,8 @@ class DataModule:
         quantile = np.percentile(tensor, q=100)
         tensor = tensor / (np.max(tensor))
         trainsize = int(np.prod(tensor.size) * args.density)
-        validsize = int((np.prod(tensor.size)) * 0.05)
-        # validsize = int(np.prod(tensor.size) * (1 - args.density))
+        # validsize = int((np.prod(tensor.size)) * 0.05)
+        validsize = int(np.prod(tensor.size) * (1 - args.density))
         rowIdx, colIdx = tensor.nonzero()
         p = np.random.permutation(len(rowIdx))
         rowIdx, colIdx = rowIdx[p], colIdx[p]
@@ -138,8 +137,7 @@ class Model(torch.nn.Module):
         elif self.args.model == 'CSMF':
             self.model = CSMF(args)
         elif self.args.model == 'ZYX':
-            # self.model = HyperCF(339, 5825, args)
-            self.model = SubgraphCF(args)
+            self.model = HyperCF(339, 5825, args)
         else:
             raise NotImplementedError
 
