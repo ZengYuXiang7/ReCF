@@ -66,7 +66,10 @@ class Model(torch.nn.Module):
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)
             hidden, pred = self.forward(inputs)
-            loss = self.loss_function(pred, value)
+            if self.args.classification:
+                loss = self.loss_function(pred, value.long())
+            else:
+                loss = self.loss_function(pred, value)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
