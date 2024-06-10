@@ -2,21 +2,28 @@
 # Author : yuxiang Zeng
 import platform
 import multiprocessing
-
+import dgl
 from torch.utils.data import DataLoader
 
 
-def get_dataloaders(train_set, valid_set, test_set, args):
-    max_workers = multiprocessing.cpu_count()
-    # max_workers = 1
 
+def custom_collate_fn(batch, args):
+    from torch.utils.data.dataloader import default_collate
+    features, values = zip(*batch)
+    features = default_collate(features)
+    values = default_collate(values)
+    return features, values
+
+
+def get_dataloaders(train_set, valid_set, test_set, args):
+    # max_workers = multiprocessing.cpu_count()
     train_loader = DataLoader(
         train_set,
         batch_size=args.bs,
         drop_last=False,
         shuffle=True,
         pin_memory=True,
-        collate_fn=custom_collate_fn,
+        collate_fn=lambda batch: custom_collate_fn(batch, args),
         # num_workers=max_workers,
         # prefetch_factor=4
     )
@@ -26,17 +33,17 @@ def get_dataloaders(train_set, valid_set, test_set, args):
         drop_last=False,
         shuffle=False,
         pin_memory=True,
-        collate_fn=custom_collate_fn,
+        collate_fn=lambda batch: custom_collate_fn(batch, args),
         # num_workers=max_workers,
         # prefetch_factor=4
     )
     test_loader = DataLoader(
         test_set,
-        batch_size=4096,  # 8192
+        batch_size=4096,
         drop_last=False,
         shuffle=False,
         pin_memory=True,
-        collate_fn=custom_collate_fn,
+        collate_fn=lambda batch: custom_collate_fn(batch, args),
         # num_workers=max_workers,
         # prefetch_factor=4
     )
@@ -44,6 +51,6 @@ def get_dataloaders(train_set, valid_set, test_set, args):
     return train_loader, valid_loader, test_loader
 
 
-def custom_collate_fn(batch):
-    from torch.utils.data.dataloader import default_collate
-    return default_collate(batch)
+
+if __name__ == '__main__':
+    print(multiprocessing.cpu_count())

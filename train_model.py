@@ -21,8 +21,9 @@ from utils.dataloader import get_dataloaders
 from utils.logger import Logger
 from utils.metrics import ErrorMetrics
 from utils.monitor import EarlyStopping
+from utils.plotter import MetricsPlotter
 from utils.trainer import get_loss_function, get_optimizer
-from utils.utils import set_settings, set_seed
+from utils.utils import set_settings, set_seed, makedir
 
 global log
 
@@ -69,8 +70,8 @@ class DataModule:
         quantile = np.percentile(tensor, q=100)
         tensor = tensor / (np.max(tensor))
         trainsize = int(np.prod(tensor.size) * args.density)
-        # validsize = int((np.prod(tensor.size)) * 0.05)
-        validsize = int(np.prod(tensor.size) * (1 - args.density))
+        validsize = int((np.prod(tensor.size)) * 0.05)
+        # validsize = int(np.prod(tensor.size) * (1 - args.density))
         rowIdx, colIdx = tensor.nonzero()
         p = np.random.permutation(len(rowIdx))
         rowIdx, colIdx = rowIdx[p], colIdx[p]
@@ -139,6 +140,7 @@ class Model(torch.nn.Module):
         else:
             raise NotImplementedError
 
+
     def forward(self, inputs, test=False):
         userIdx, servIdx = inputs
         estimated = self.model(userIdx, servIdx)
@@ -159,7 +161,7 @@ class Model(torch.nn.Module):
             inputs, value = train_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)
-            pred = self.forward(inputs, False)
+            hidden, pred = self.forward(inputs, False)
             loss = self.loss_function(pred, value)
             self.optimizer.zero_grad()
             loss.backward()
@@ -177,7 +179,7 @@ class Model(torch.nn.Module):
             inputs, value = valid_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)
-            pred = self.forward(inputs)
+            hidden, pred = self.forward(inputs)
             val_loss += self.loss_function(pred, value)
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
@@ -192,11 +194,12 @@ class Model(torch.nn.Module):
     def test_one_epoch(self, dataModule):
         preds = []
         reals = []
-        for test_Batch in tqdm(dataModule.valid_loader):
+        for test_Batch in (dataModule.test_loader):
             inputs, value = test_Batch
             inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
             value = value.to(self.args.device)
-            pred = self.forward(inputs)
+            hidden, pred = self.forward(inputs)
+
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
             preds.append(pred)
@@ -207,65 +210,78 @@ class Model(torch.nn.Module):
         return test_error
 
 
-def RunOnce(args, runId, Runtime, log):
+
+def RunOnce(args, runId, log):
     # Set seed
     set_seed(args.seed + runId)
 
     # Initialize
     exper = experiment(args)
     datamodule = DataModule(exper, args)
-    model = Model(datamodule.train_tensor, args)
+    model = Model(datamodule, args)
     monitor = EarlyStopping(args)
 
     # Setup training tool
     model.setup_optimizer(args)
-    model.max_value = datamodule.max_value
     train_time = []
-    # for epoch in trange(args.epochs, disable=not args.program_test):
     for epoch in range(args.epochs):
         epoch_loss, time_cost = model.train_one_epoch(datamodule)
         valid_error = model.valid_one_epoch(datamodule)
         monitor.track_one_epoch(epoch, model, valid_error)
         train_time.append(time_cost)
-        log.show_epoch_error(runId, epoch, epoch_loss, valid_error, train_time)
+        log.show_epoch_error(runId, epoch, monitor, epoch_loss, valid_error, train_time)
+        plotter.append_epochs(valid_error)
         if monitor.early_stop:
             break
     model.load_state_dict(monitor.best_model)
     sum_time = sum(train_time[: monitor.best_epoch])
     results = model.test_one_epoch(datamodule)
     log.show_test_error(runId, monitor, results, sum_time)
-    return {
-        'MAE': results["MAE"],
-        'RMSE': results["RMSE"],
-        'NMAE': results["NMAE"],
-        'NRMSE': results["NRMSE"],
-        'TIME': sum_time,
-    }, results['Acc']
+
+    # Save the best model parameters
+    makedir('./checkpoints')
+    model_path = f'./checkpoints/{args.model}_{args.seed}.pt'
+    torch.save(monitor.best_model, model_path)
+    # log.only_print(f'Model parameters saved to {model_path}')
+    return results
 
 
 def RunExperiments(log, args):
     log('*' * 20 + 'Experiment Start' + '*' * 20)
     metrics = collections.defaultdict(list)
+
     for runId in range(args.rounds):
-        runHash = int(time.time())
-        results, acc = RunOnce(args, runId, runHash, log)
+        plotter.reset_round()
+        results = RunOnce(args, runId, log)
+        plotter.append_round()
         for key in results:
             metrics[key].append(results[key])
-        for key, item in zip(['Acc1', 'Acc5', 'Acc10'], [0, 1, 2]):
-            metrics[key].append(acc[item])
     log('*' * 20 + 'Experiment Results:' + '*' * 20)
+
     for key in metrics:
         log(f'{key}: {np.mean(metrics[key]):.4f} ± {np.std(metrics[key]):.4f}')
+
     if args.record:
         log.save_result(metrics)
-    log('*' * 20 + 'Experiment Success' + '*' * 20 + '\n')
+        plotter.record_metric(metrics)
+
+    log('*' * 20 + 'Experiment Success' + '*' * 20)
+
     return metrics
 
 
 if __name__ == '__main__':
     args = get_config()
     set_settings(args)
-    log = Logger(args)
+
+    # logger plotter
+    exper_detail = f"Dataset : {args.dataset.upper()}, Model : {args.model}, Density : {args.density:.2f}"
+    log_filename = f'd{args.density}_r{args.dimension}'
+    log = Logger(log_filename, exper_detail, args)
+    plotter = MetricsPlotter(log_filename, args)
     args.log = log
-    log(str(args))
+    log(str(args.__dict__))
+
+    # Run Experiment
     RunExperiments(log, args)
+

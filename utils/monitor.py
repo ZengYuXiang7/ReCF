@@ -44,4 +44,4 @@ class EarlyStopping:
         if self.args.classification:
             self.track(epoch, model.state_dict(), -1 * error['Acc'])
         else:
-            self.track(epoch, model.state_dict(), error['MAE'])
+            self.track(epoch, model.state_dict(), error['NMAE'])

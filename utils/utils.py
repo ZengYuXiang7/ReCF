@@ -20,13 +20,13 @@ def set_settings(args):
         args.bs = 1
         args.experiment = 0
 
-    if args.experiment:
-        args.record = 1
-    else:
-        args.record = 0
-
     if platform.system() == 'Linux':
+        args.program_test = 1
+        args.verbose = 10
         args.experiment = 1
+
+    if args.classification:
+        args.loss_func = 'CrossEntropyLoss'
 
     return args
 

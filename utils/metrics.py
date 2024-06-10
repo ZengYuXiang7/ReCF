@@ -7,16 +7,16 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 
 
 def ErrorMetrics(realVec, estiVec, args):
-    if isinstance(realVec, np.ndarray):
-        realVec = realVec.astype(float)
-    elif isinstance(realVec, t.Tensor):
-        realVec = realVec.cpu().detach().numpy().astype(float)
-    if isinstance(estiVec, np.ndarray):
-        estiVec = estiVec.astype(float)
-    elif isinstance(estiVec, t.Tensor):
-        estiVec = estiVec.cpu().detach().numpy().astype(float)
-
     if not args.classification:
+        if isinstance(realVec, np.ndarray):
+            realVec = realVec.astype(float)
+        elif isinstance(realVec, t.Tensor):
+            realVec = realVec.cpu().detach().numpy().astype(float)
+        if isinstance(estiVec, np.ndarray):
+            estiVec = estiVec.astype(float)
+        elif isinstance(estiVec, t.Tensor):
+            estiVec = estiVec.cpu().detach().numpy().astype(float)
+
         absError = np.abs(estiVec - realVec)
         MAE = np.mean(absError)
         RMSE = np.linalg.norm(absError) / np.sqrt(np.array(absError.shape[0]))
@@ -36,14 +36,16 @@ def ErrorMetrics(realVec, estiVec, args):
             'RMSE': RMSE,
             'NMAE': NMAE,
             'NRMSE': NRMSE,
-            'Acc': Acc,
+            'Acc_1': Acc[0],
+            'Acc_5': Acc[1],
+            'Acc_10': Acc[2],
         }
     else:
         from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
         Acc = accuracy_score(realVec, estiVec)
-        F1 = f1_score(realVec, estiVec, average='micro')  # 如果是多分类问题，可以修改 average 参数
-        P = precision_score(realVec, estiVec, average='micro')  # 如果是多分类问题，可以修改 average 参数
-        Recall = recall_score(realVec, estiVec, average='micro')  # 如果是多分类问题，可以修改 average 参数
+        F1 = f1_score(realVec, estiVec, average='macro')  # 如果是多分类问题，可以修改 average 参数
+        P = precision_score(realVec, estiVec, average='macro')  # 如果是多分类问题，可以修改 average 参数
+        Recall = recall_score(realVec, estiVec, average='macro')  # 如果是多分类问题，可以修改 average 参数
         return {
             'Acc': Acc,
             'F1': F1,
