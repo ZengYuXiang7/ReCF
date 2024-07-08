@@ -12,7 +12,7 @@ class LoggerConfig:
 class ExperimentConfig:
     seed: int = 0
     rounds: int = 1
-    epochs: int = 1
+    epochs: int = 100
     patience: int = 30
 
     verbose: int = 1
