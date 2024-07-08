@@ -10,9 +10,9 @@ import pickle as pk
 class PureMF(torch.nn.Module):
     def __init__(self, args):
         super(PureMF, self).__init__()
-        self.embed_user_GMF = torch.nn.Embedding(339, args.dimension)
-        self.embed_item_GMF = torch.nn.Embedding(5825, args.dimension)
-        self.predict_layer = torch.nn.Linear(args.dimension, 1)
+        self.embed_user_GMF = torch.nn.Embedding(339, args.rank)
+        self.embed_item_GMF = torch.nn.Embedding(5825, args.rank)
+        self.predict_layer = torch.nn.Linear(args.rank, 1)
 
     def forward(self, UserIdx, itemIdx):
         user_embed = self.embed_user_GMF(UserIdx)

@@ -71,7 +71,7 @@ class GATCF(torch.nn.Module):
         serv_embeds = self.serv_attention(self.servgraph, serv_embeds)[servIdx]
         hidden_embeds = self.layers(torch.cat((user_embeds, serv_embeds), dim=-1))
         estimated = self.final_pred(hidden_embeds)
-        return estimated
+        return hidden_embeds, estimated
 
 
 

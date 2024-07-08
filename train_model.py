@@ -8,6 +8,7 @@ import torch
 
 from tqdm import *
 
+from data import experiment, DataModule
 from models.baselines.CSMF import CSMF
 from models.baselines.GATCF import GATCF
 from models.baselines.GATCF2 import GATCF2
@@ -17,7 +18,6 @@ from models.baselines.NeuCF import NeuCF
 from models.baselines.Subgraph import SubgraphCF
 from models.baselines.hyperCF_ccy import HTCF
 from utils.config import get_config
-from utils.dataloader import get_dataloaders
 from utils.logger import Logger
 from utils.metrics import ErrorMetrics
 from utils.monitor import EarlyStopping
@@ -28,90 +28,6 @@ from utils.utils import set_settings, set_seed, makedir
 global log
 
 torch.set_default_dtype(torch.float32)
-
-
-class experiment:
-    def __init__(self, args):
-        self.args = args
-
-    @staticmethod
-    def load_data(args):
-        string = args.path + '/' + args.dataset + 'Matrix' + '.txt'
-        tensor = np.loadtxt(open(string, 'rb'))
-        return tensor
-
-    @staticmethod
-    def preprocess_data(data, args):
-        data[data == -1] = 0
-        return data
-
-
-
-# 数据集定义
-class DataModule:
-    def __init__(self, exper_type, args):
-        self.args = args
-        self.path = args.path
-        self.data = exper_type.load_data(args)
-        self.data = exper_type.preprocess_data(self.data, args)
-        self.train_tensor, self.valid_tensor, self.test_tensor, self.max_value = self.get_train_valid_test_dataset(self.data, args)
-        self.train_set, self.valid_set, self.test_set = self.get_dataset(self.train_tensor, self.valid_tensor, self.test_tensor, exper_type, args)
-        self.train_loader, self.valid_loader, self.test_loader = get_dataloaders(self.train_set, self.valid_set, self.test_set, args)
-        args.log.only_print(f'Train_length : {len(self.train_loader.dataset)} Valid_length : {len(self.valid_loader.dataset)} Test_length : {len(self.test_loader.dataset)}')
-
-    def get_dataset(self, train_tensor, valid_tensor, test_tensor, exper_type, args):
-        return (
-            TensorDataset(train_tensor, exper_type, args),
-            TensorDataset(valid_tensor, exper_type, args),
-            TensorDataset(test_tensor, exper_type, args)
-        )
-
-    def get_train_valid_test_dataset(self, tensor, args):
-        quantile = np.percentile(tensor, q=100)
-        tensor = tensor / (np.max(tensor))
-        trainsize = int(np.prod(tensor.size) * args.density)
-        validsize = int((np.prod(tensor.size)) * 0.05)
-        # validsize = int(np.prod(tensor.size) * (1 - args.density))
-        rowIdx, colIdx = tensor.nonzero()
-        p = np.random.permutation(len(rowIdx))
-        rowIdx, colIdx = rowIdx[p], colIdx[p]
-        trainRowIndex = rowIdx[:trainsize]
-        trainColIndex = colIdx[:trainsize]
-        traintensor = np.zeros_like(tensor)
-        traintensor[trainRowIndex, trainColIndex] = tensor[trainRowIndex, trainColIndex]
-        validStart = trainsize
-        validRowIndex = rowIdx[validStart:validStart + validsize]
-        validColIndex = colIdx[validStart:validStart + validsize]
-        validtensor = np.zeros_like(tensor)
-        validtensor[validRowIndex, validColIndex] = tensor[validRowIndex, validColIndex]
-        testStart = validStart + validsize
-        testRowIndex = rowIdx[testStart:]
-        testColIndex = colIdx[testStart:]
-        testtensor = np.zeros_like(tensor)
-        testtensor[testRowIndex, testColIndex] = tensor[testRowIndex, testColIndex]
-        return traintensor, validtensor, testtensor, quantile
-
-
-class TensorDataset(torch.utils.data.Dataset):
-
-    def __init__(self, tensor, exper, args):
-        self.tensor = tensor
-        self.indices = self.get_pytorch_index(tensor)
-
-    def __getitem__(self, idx):
-        output = self.indices[idx, :-1]  # 去掉最后一列
-        inputs = tuple(torch.as_tensor(output[i]).long() for i in range(output.shape[0]))
-        value = torch.as_tensor(self.indices[idx, -1])  # 最后一列作为真实值
-        return inputs, value
-
-    def __len__(self):
-        return self.indices.shape[0]
-
-    def get_pytorch_index(self, data):
-        userIdx, servIdx = data.nonzero()
-        values = data[userIdx, servIdx]
-        idx = torch.as_tensor(np.vstack([userIdx, servIdx, values]).T)
-        return idx
 
 
 class Model(torch.nn.Module):
@@ -141,8 +57,8 @@ class Model(torch.nn.Module):
             raise NotImplementedError
 
 
-    def forward(self, inputs, test=False):
-        userIdx, servIdx = inputs
+    def forward(self, userIdx, servIdx, test=False):
+        userIdx, servIdx = userIdx, servIdx
         estimated = self.model(userIdx, servIdx)
         return estimated.flatten()
 
@@ -158,10 +74,10 @@ class Model(torch.nn.Module):
         torch.set_grad_enabled(True)
         t1 = time.time()
         for train_Batch in tqdm(dataModule.train_loader):
-            inputs, value = train_Batch
-            inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
+            userIdx, servIdx, value = train_Batch
+            userIdx, servIdx = userIdx.to(self.args.device), servIdx.to(self.args.device)
             value = value.to(self.args.device)
-            hidden, pred = self.forward(inputs, False)
+            pred = self.forward(userIdx, servIdx, False)
             loss = self.loss_function(pred, value)
             self.optimizer.zero_grad()
             loss.backward()
@@ -176,10 +92,10 @@ class Model(torch.nn.Module):
         preds = []
         reals = []
         for valid_Batch in tqdm(dataModule.valid_loader):
-            inputs, value = valid_Batch
-            inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
+            userIdx, servIdx, value = valid_Batch
+            userIdx, servIdx = userIdx.to(self.args.device), servIdx.to(self.args.device)
             value = value.to(self.args.device)
-            hidden, pred = self.forward(inputs)
+            pred = self.forward(userIdx, servIdx)
             val_loss += self.loss_function(pred, value)
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
@@ -195,10 +111,10 @@ class Model(torch.nn.Module):
         preds = []
         reals = []
         for test_Batch in (dataModule.test_loader):
-            inputs, value = test_Batch
-            inputs = inputs[0].to(self.args.device), inputs[1].to(self.args.device)
+            userIdx, servIdx, value = test_Batch
+            userIdx, servIdx = userIdx.to(self.args.device), servIdx.to(self.args.device)
             value = value.to(self.args.device)
-            hidden, pred = self.forward(inputs)
+            hidden, pred = self.forward(userIdx, servIdx)
 
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
@@ -276,7 +192,7 @@ if __name__ == '__main__':
 
     # logger plotter
     exper_detail = f"Dataset : {args.dataset.upper()}, Model : {args.model}, Density : {args.density:.2f}"
-    log_filename = f'd{args.density}_r{args.dimension}'
+    log_filename = f'd{args.density}_r{args.rank}'
     log = Logger(log_filename, exper_detail, args)
     plotter = MetricsPlotter(log_filename, args)
     args.log = log

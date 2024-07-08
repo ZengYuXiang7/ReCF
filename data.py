@@ -14,7 +14,7 @@ class experiment:
     @staticmethod
     def load_data(args):
         string = args.path + '/' + args.dataset + 'Matrix' + '.txt'
-        tensor = np.loadtxt(open(string, 'rb'))
+        tensor = np.loadtxt(open(string, 'rb')).astype(np.float32)
         return tensor
 
     @staticmethod
@@ -77,10 +77,11 @@ class TensorDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         output = self.indices[idx, :-1]  # 去掉最后一列
-        inputs = tuple(torch.as_tensor(output[i]).long() for i in range(output.shape[0]))
-        value = torch.as_tensor(self.indices[idx, -1])  # 最后一列作为真实值
-        return inputs, value
-
+        userIdx, servIdx = output[0], output[1]
+        userIdx = torch.as_tensor(userIdx, dtype=torch.long)
+        servIdx = torch.as_tensor(servIdx, dtype=torch.long)
+        value = torch.as_tensor(self.indices[idx, -1], dtype=torch.float32)
+        return userIdx, servIdx, value
     def __len__(self):
         return self.indices.shape[0]
 

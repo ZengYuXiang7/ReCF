@@ -9,10 +9,10 @@ from torch.utils.data import DataLoader
 
 def custom_collate_fn(batch, args):
     from torch.utils.data.dataloader import default_collate
-    features, values = zip(*batch)
-    features = default_collate(features)
+    userIdx, servIdx, values = zip(*batch)
+    userIdx, servIdx = default_collate(userIdx), default_collate(servIdx)
     values = default_collate(values)
-    return features, values
+    return userIdx, servIdx, values
 
 
 def get_dataloaders(train_set, valid_set, test_set, args):

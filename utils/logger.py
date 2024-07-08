@@ -19,7 +19,7 @@ class Logger:
         if args.experiment:
             makedir(self.fileroot)
             ts = time.asctime().replace(' ', '_').replace(':', '_')
-            if args.dimension == None:
+            if args.rank == None:
                 address = self.fileroot + f'/Machine_learning_{args.dataset}_{args.density}'
             else:
                 address = self.fileroot + self.filename
