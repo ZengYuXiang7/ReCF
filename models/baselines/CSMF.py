@@ -13,16 +13,16 @@ class CSMF(torch.nn.Module):
         self.args = args
         self.UserList = pd.read_csv(args.path + 'userlist_idx.csv')
         self.ServList = pd.read_csv(args.path + 'wslist_idx.csv')
-        self.UserEmbedding = torch.nn.Embedding(339, args.dimension)
-        self.UserASEmbedding = torch.nn.Embedding(137, args.dimension)
-        self.UserREEmbedding = torch.nn.Embedding(31, args.dimension)
-        self.ServEmbedding = torch.nn.Embedding(5825, args.dimension)
-        self.ServASEmbedding = torch.nn.Embedding(1603, args.dimension)
-        self.ServREEmbedding = torch.nn.Embedding(74, args.dimension)
-        self.ServPrEmbedding = torch.nn.Embedding(2699, args.dimension)
+        self.UserEmbedding = torch.nn.Embedding(339, args.rank)
+        self.UserASEmbedding = torch.nn.Embedding(137, args.rank)
+        self.UserREEmbedding = torch.nn.Embedding(31, args.rank)
+        self.ServEmbedding = torch.nn.Embedding(5825, args.rank)
+        self.ServASEmbedding = torch.nn.Embedding(1603, args.rank)
+        self.ServREEmbedding = torch.nn.Embedding(74, args.rank)
+        self.ServPrEmbedding = torch.nn.Embedding(2699, args.rank)
 
-        self.user_norm = torch.nn.LayerNorm(args.dimension)
-        self.serv_norm = torch.nn.LayerNorm(args.dimension)
+        self.user_norm = torch.nn.LayerNorm(args.rank)
+        self.serv_norm = torch.nn.LayerNorm(args.rank)
 
         for layer in self.children():
             if isinstance(layer, torch.nn.Embedding):
@@ -34,7 +34,7 @@ class CSMF(torch.nn.Module):
         else:
             self.device = 'cpu'
 
-        self.norm = torch.nn.LayerNorm(args.dimension)
+        self.norm = torch.nn.LayerNorm(args.rank)
 
     def forward(self, userIdx, servIdx):
         user = np.array(userIdx.cpu(), dtype='int32')

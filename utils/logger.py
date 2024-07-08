@@ -32,7 +32,7 @@ class Logger:
         args = self.args
         if self.args.experiment:
             makedir('./results/metrics/')
-        if args.dimension == None:
+        if args.rank == None:
             address = f'./results/metrics/Machine_learning_{args.dataset}_{args.density}'
         else:
             address = f'./results/metrics/' + self.filename

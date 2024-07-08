@@ -42,15 +42,15 @@ class GATCF(torch.nn.Module):
             pickle.dump(userg, open('./models/pretrain/userg.pkl', 'wb'))
             pickle.dump(servg, open('./models/pretrain/servg.pkl', 'wb'))
         self.usergraph, self.servgraph = userg.to(self.args.device), servg.to(self.args.device)
-        self.dim = args.dimension
-        self.user_embeds = torch.nn.Embedding(self.usergraph.number_of_nodes(), self.dim)
+        self.rank = args.rank
+        self.user_embeds = torch.nn.Embedding(self.usergraph.number_of_nodes(), self.rank)
         torch.nn.init.kaiming_normal_(self.user_embeds.weight)
-        self.serv_embeds = torch.nn.Embedding(self.servgraph.number_of_nodes(), self.dim)
+        self.serv_embeds = torch.nn.Embedding(self.servgraph.number_of_nodes(), self.rank)
         torch.nn.init.kaiming_normal_(self.serv_embeds.weight)
 
-        self.user_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
-        self.serv_attention = GraphGATConv(args.dimension, args.dimension, args.head_num, 0.10)
-        input_dim = 2 * args.dimension
+        self.user_attention = GraphGATConv(args.rank, args.rank, args.head_num, 0.10)
+        self.serv_attention = GraphGATConv(args.rank, args.rank, args.head_num, 0.10)
+        input_dim = 2 * args.rank
 
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(input_dim, input_dim // 2),

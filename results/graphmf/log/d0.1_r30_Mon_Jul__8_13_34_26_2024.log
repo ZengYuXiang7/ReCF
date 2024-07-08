@@ -1,0 +1,13 @@
+INFO:graphmf:|2024-07-08 13:34:26| {'classification': False, 'visualize': True, 'bs': 256, 'lr': 0.001, 'decay': 0.0001, 'loss_func': 'L1Loss', 'optim': 'AdamW', 'path': './datasets/', 'dataset': 'rt', 'train_size': 100, 'density': 0.1, 'user_num': 339, 'serv_num': 5825, 'logger': 'None', 'model': 'graphmf', 'rank': 30, 'seed': 0, 'rounds': 1, 'epochs': 1, 'patience': 30, 'verbose': 1, 'device': 'cpu', 'debug': False, 'experiment': True, 'program_test': False, 'record': True, 'order': 2, 'log': <utils.logger.Logger object at 0x7f8cb0241a00>}
+INFO:graphmf:|2024-07-08 13:34:26| ********************Experiment Start********************
+INFO:graphmf:|2024-07-08 13:35:21| Round=1 BestEpoch=1 MAE=0.5670 RMSE=1.7688 NMAE=0.6241 NRMSE=0.8148 Training_time=17.7 s 
+INFO:graphmf:|2024-07-08 13:35:21| Acc = [1%=0.0131, 5%=0.0661, 10%=0.1318] 
+INFO:graphmf:|2024-07-08 13:35:21| ********************Experiment Results:********************
+INFO:graphmf:|2024-07-08 13:35:21| MAE: 0.5670 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| RMSE: 1.7688 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| NMAE: 0.6241 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| NRMSE: 0.8148 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| Acc_1: 0.0131 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| Acc_5: 0.0661 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| Acc_10: 0.1318 ± 0.0000
+INFO:graphmf:|2024-07-08 13:35:21| ********************Experiment Success********************

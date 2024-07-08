@@ -11,13 +11,13 @@ import torch.nn.functional as F
 from models.baselines.GATCF import create_graph
 
 class GraphSAGEConv(torch.nn.Module):
-    def __init__(self, graph, dim, order, args):
+    def __init__(self, graph, rank, order, args):
         super(GraphSAGEConv, self).__init__()
         self.args = args
         self.order = order
         self.graph = graph
-        self.layers = torch.nn.ModuleList([SAGEConv(dim, dim, aggregator_type='gcn') for _ in range(order)])
-        self.norms = torch.nn.ModuleList([torch.nn.LayerNorm(dim) for _ in range(order)])
+        self.layers = torch.nn.ModuleList([SAGEConv(rank, rank, aggregator_type='gcn') for _ in range(order)])
+        self.norms = torch.nn.ModuleList([torch.nn.LayerNorm(rank) for _ in range(order)])
         self.acts = torch.nn.ModuleList([torch.nn.ELU() for _ in range(order)])
 
     def forward(self, emebeds):
@@ -40,13 +40,13 @@ class HyperCF(torch.nn.Module):
         self.serv_num = serv_num
 
         # 注意力机制的参数
-        self.dim = args.dimension
+        self.rank = args.dimension
         self.head_num = args.head_num
         self.hyperNum = args.hyperNum
 
         # Attention
-        self.K = torch.nn.Parameter(torch.randn(self.dim, self.dim))
-        self.VMapping = torch.nn.Parameter(torch.randn(self.dim, self.dim))
+        self.K = torch.nn.Parameter(torch.randn(self.rank, self.rank))
+        self.VMapping = torch.nn.Parameter(torch.randn(self.rank, self.rank))
 
 
         # 上下文图
@@ -58,17 +58,17 @@ class HyperCF(torch.nn.Module):
             pickle.dump(self.userg, open('./models/pretrain/userg.pkl', 'wb'))
             pickle.dump(self.servg, open('./models/pretrain/servg.pkl', 'wb'))
 
-        self.user_gcn = GraphSAGEConv(self.userg, self.dim, args.order, args)
-        self.serv_gcn = GraphSAGEConv(self.servg, self.dim, args.order, args)
+        self.user_gcn = GraphSAGEConv(self.userg, self.rank, args.order, args)
+        self.serv_gcn = GraphSAGEConv(self.servg, self.rank, args.order, args)
 
-        self.user_embeds = torch.nn.Embedding(self.userg.number_of_nodes(), self.dim)
-        self.serv_embeds = torch.nn.Embedding(self.servg.number_of_nodes(), self.dim)
+        self.user_embeds = torch.nn.Embedding(self.userg.number_of_nodes(), self.rank)
+        self.serv_embeds = torch.nn.Embedding(self.servg.number_of_nodes(), self.rank)
 
         self.fc1 = torch.nn.Linear(self.hyperNum, self.hyperNum)
         self.fc2 = torch.nn.Linear(self.hyperNum, self.hyperNum)
 
         # 注意力机制的参数
-        self.dim = args.dimension
+        self.rank = args.dimension
         self.head_num = args.head_num
         self.hyperNum = args.hyperNum
         self.actorchunc = torch.nn.ReLU()  # 激活函数为ReLU
@@ -90,9 +90,9 @@ class HyperCF(torch.nn.Module):
         )
 
         # 超图部分
-        self.uHyper = torch.empty(self.hyperNum, self.dim)
+        self.uHyper = torch.empty(self.hyperNum, self.rank)
         torch.nn.init.xavier_normal_(self.uHyper)
-        self.iHyper = torch.empty(self.hyperNum, self.dim)
+        self.iHyper = torch.empty(self.hyperNum, self.rank)
         torch.nn.init.xavier_normal_(self.iHyper)
 
     def transpose(self, mat):
@@ -135,7 +135,7 @@ class HyperCF(torch.nn.Module):
     # 准备注意力机制中的key
     def prepareKey(self, nodeEmbed):
         key = torch.matmul(nodeEmbed, self.K)  # Matrix multiplication
-        key = key.view(-1, self.head_num, self.dim // self.head_num)  # Reshape
+        key = key.view(-1, self.head_num, self.rank // self.head_num)  # Reshape
         key = key.transpose(0, 1)  # Transpose to get [head_num, N, dimension // head_num]
         return key
 
@@ -144,16 +144,16 @@ class HyperCF(torch.nn.Module):
 
         # 第一步： node -> edge
         # query = user/item    key = user/item  value = edge_embeds
-        lstLat = torch.matmul(embeds[-1], self.VMapping).view(-1, self.head_num, self.dim // self.head_num)  # 339*2*16
+        lstLat = torch.matmul(embeds[-1], self.VMapping).view(-1, self.head_num, self.rank // self.head_num)  # 339*2*16
         lstLat = lstLat.permute(1, 2, 0)  # Head * d' * N  2*16*339
 
         # key.size() 2*339*16
         temlat1 = torch.matmul(lstLat, key)  # Head * d' * d' 2*16*16
-        edge_embeds = edge_embeds.view(-1, self.head_num, self.dim // self.head_num)
+        edge_embeds = edge_embeds.view(-1, self.head_num, self.rank // self.head_num)
         edge_embeds = edge_embeds.permute(1, 2, 0)  # Head * d' * E 2*16*128
         edge_embeds = edge_embeds.to(self.args.device)
 
-        temlat1 = torch.matmul(temlat1, edge_embeds).view(self.dim, -1)  # d * E 32*128
+        temlat1 = torch.matmul(temlat1, edge_embeds).view(self.rank, -1)  # d * E 32*128
 
         # HGNN = ø(HX + X)  HGNN^2
         temlat2 = self.fc1(temlat1)
@@ -167,11 +167,11 @@ class HyperCF(torch.nn.Module):
         # 第二步： edge -> node
         # query = 12   key = user/item   value =
         # key * (final edge_embeds * edge_embeds)
-        preNewLat = torch.matmul(temlat3.permute(1, 0), self.VMapping).view(-1, self.head_num, self.dim // self.head_num)
+        preNewLat = torch.matmul(temlat3.permute(1, 0), self.VMapping).view(-1, self.head_num, self.rank // self.head_num)
         preNewLat = preNewLat.permute(1, 0, 2)  # Head * E * d'
         preNewLat = torch.matmul(edge_embeds, preNewLat)  # Head * d'(lowrank) * d'(embed)
         newLat = torch.matmul(key, preNewLat)  # Head * N * d'
-        newLat = newLat.permute(1, 0, 2).reshape(-1, self.dim)
+        newLat = newLat.permute(1, 0, 2).reshape(-1, self.rank)
         embeds.append(newLat)
 
         return embeds

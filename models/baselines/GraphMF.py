@@ -13,16 +13,16 @@ from dgl.nn.pytorch import SAGEConv
 
 
 class GraphSAGEConv(torch.nn.Module):
-    def __init__(self, graph, dim, order, args):
+    def __init__(self, graph, rank, order, args):
         super(GraphSAGEConv, self).__init__()
         self.args = args
         self.order = order
         self.graph = graph
-        self.embedding = torch.nn.Parameter(torch.Tensor(self.graph.number_of_nodes(), dim))
+        self.embedding = torch.nn.Parameter(torch.Tensor(self.graph.number_of_nodes(), rank))
         torch.nn.init.kaiming_normal_(self.embedding)
         self.graph.ndata['L0'] = self.embedding
-        self.layers = torch.nn.ModuleList([SAGEConv(dim, dim, aggregator_type='gcn') for _ in range(order)])
-        self.norms = torch.nn.ModuleList([torch.nn.LayerNorm(dim) for _ in range(order)])
+        self.layers = torch.nn.ModuleList([SAGEConv(rank, rank, aggregator_type='gcn') for _ in range(order)])
+        self.norms = torch.nn.ModuleList([torch.nn.LayerNorm(rank) for _ in range(order)])
         self.acts = torch.nn.ModuleList([torch.nn.ELU() for _ in range(order)])
 
     def forward(self, index):
@@ -49,12 +49,12 @@ class GraphMF(torch.nn.Module):
             pickle.dump(userg, open('./models/pretrain/userg.pkl', 'wb'))
             pickle.dump(servg, open('./models/pretrain/servg.pkl', 'wb'))
         self.usergraph, self.servgraph = userg, servg
-        self.dim = args.dimension
+        self.rank = args.rank
         self.order = args.order
-        self.user_embeds = GraphSAGEConv(self.usergraph, args.dimension, args.order, args)
-        self.item_embeds = GraphSAGEConv(self.servgraph, args.dimension, args.order, args)
+        self.user_embeds = GraphSAGEConv(self.usergraph, args.rank, args.order, args)
+        self.item_embeds = GraphSAGEConv(self.servgraph, args.rank, args.order, args)
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(2 * args.dimension, 128),
+            torch.nn.Linear(2 * args.rank, 128),
             torch.nn.LayerNorm(128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 128),

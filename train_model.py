@@ -11,12 +11,9 @@ from tqdm import *
 from data import experiment, DataModule
 from models.baselines.CSMF import CSMF
 from models.baselines.GATCF import GATCF
-from models.baselines.GATCF2 import GATCF2
 from models.baselines.GraphMF import GraphMF
 from models.baselines.MF import PureMF
 from models.baselines.NeuCF import NeuCF
-from models.baselines.Subgraph import SubgraphCF
-from models.baselines.hyperCF_ccy import HTCF
 from utils.config import get_config
 from utils.logger import Logger
 from utils.metrics import ErrorMetrics
@@ -37,22 +34,16 @@ class Model(torch.nn.Module):
         self.user_num = args.user_num
         self.serv_num = args.serv_num
 
-        if self.args.model == 'GraphMF':
+        if self.args.model == 'graphmf':
             self.model = GraphMF(args)
-        elif self.args.model == 'GATCF':
+        elif self.args.model == 'gatcf':
             self.model = GATCF(args)
-        elif self.args.model == 'GATCF2':
-            self.model = GATCF2(args)
-        elif self.args.model == 'HTCF':
-            self.model = HTCF(train_graph, 339, 5825, args)
-        elif self.args.model == 'MF':
+        elif self.args.model == 'mf':
             self.model = PureMF(args)
-        elif self.args.model == 'NeuCF':
+        elif self.args.model == 'neucf':
             self.model = NeuCF(args)
-        elif self.args.model == 'CSMF':
+        elif self.args.model == 'csmf':
             self.model = CSMF(args)
-        elif self.args.model == 'ZYX':
-            self.model = SubgraphCF(args)
         else:
             raise NotImplementedError
 
@@ -86,45 +77,27 @@ class Model(torch.nn.Module):
         self.eval()
         torch.set_grad_enabled(False)
         return loss, t2 - t1
-
-    def valid_one_epoch(self, dataModule):
+    def evaluate_one_epoch(self, dataModule, mode='valid'):
         val_loss = 0.
         preds = []
         reals = []
-        for valid_Batch in tqdm(dataModule.valid_loader):
-            userIdx, servIdx, value = valid_Batch
-            userIdx, servIdx = userIdx.to(self.args.device), servIdx.to(self.args.device)
-            value = value.to(self.args.device)
+        dataloader = dataModule.valid_loader if mode == 'valid' else dataModule.test_loader
+        for batch in tqdm(dataloader):
+            userIdx, servIdx, value = batch
+            userIdx, servIdx, value = userIdx.to(self.args.device), servIdx.to(self.args.device), value.to(self.args.device)
             pred = self.forward(userIdx, servIdx)
-            val_loss += self.loss_function(pred, value)
+            if mode == 'valid':
+                val_loss += self.loss_function(pred, value)
             if self.args.classification:
                 pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
             preds.append(pred)
             reals.append(value)
         reals = torch.cat(reals, dim=0)
         preds = torch.cat(preds, dim=0)
-        self.scheduler.step(val_loss)
-        valid_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
-        return valid_error
-
-    def test_one_epoch(self, dataModule):
-        preds = []
-        reals = []
-        for test_Batch in (dataModule.test_loader):
-            userIdx, servIdx, value = test_Batch
-            userIdx, servIdx = userIdx.to(self.args.device), servIdx.to(self.args.device)
-            value = value.to(self.args.device)
-            hidden, pred = self.forward(userIdx, servIdx)
-
-            if self.args.classification:
-                pred = torch.max(pred, 1)[1]  # 获取预测的类别标签
-            preds.append(pred)
-            reals.append(value)
-        reals = torch.cat(reals, dim=0)
-        preds = torch.cat(preds, dim=0)
-        test_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
-        return test_error
-
+        if mode == 'valid':
+            self.scheduler.step(val_loss)
+        metrics_error = ErrorMetrics(reals * dataModule.max_value, preds * dataModule.max_value, self.args)
+        return metrics_error
 
 
 def RunOnce(args, runId, log):
@@ -137,28 +110,37 @@ def RunOnce(args, runId, log):
     model = Model(datamodule, args)
     monitor = EarlyStopping(args)
 
-    # Setup training tool
-    model.setup_optimizer(args)
-    train_time = []
-    for epoch in range(args.epochs):
-        epoch_loss, time_cost = model.train_one_epoch(datamodule)
-        valid_error = model.valid_one_epoch(datamodule)
-        monitor.track_one_epoch(epoch, model, valid_error)
-        train_time.append(time_cost)
-        log.show_epoch_error(runId, epoch, monitor, epoch_loss, valid_error, train_time)
-        plotter.append_epochs(valid_error)
-        if monitor.early_stop:
-            break
-    model.load_state_dict(monitor.best_model)
-    sum_time = sum(train_time[: monitor.best_epoch])
-    results = model.test_one_epoch(datamodule)
-    log.show_test_error(runId, monitor, results, sum_time)
-
-    # Save the best model parameters
-    makedir('./checkpoints')
-    model_path = f'./checkpoints/{args.model}_{args.seed}.pt'
-    torch.save(monitor.best_model, model_path)
-    # log.only_print(f'Model parameters saved to {model_path}')
+    try:
+        args.record = False
+        model_path = f'./checkpoints/{log_filename}_{args.seed}.pt'
+        model.load_state_dict(torch.load(model_path))
+        results = model.evaluate_one_epoch(datamodule, 'test')
+        if not args.classification:
+            log.only_print(f'MAE={results["MAE"]:.4f} RMSE={results["RMSE"]:.4f} NMAE={results["NMAE"]:.4f} NRMSE={results["NRMSE"]:.4f}')
+        else:
+            log.only_print(f'Acc={results["Acc"]:.4f} F1={results["F1"]:.4f} Precision={results["P"]:.4f} Recall={results["Recall"]:.4f}')
+    except:
+        # Setup training tool
+        model.setup_optimizer(args)
+        train_time = []
+        for epoch in range(args.epochs):
+            epoch_loss, time_cost = model.train_one_epoch(datamodule)
+            valid_error = model.evaluate_one_epoch(datamodule, 'valid')
+            monitor.track_one_epoch(epoch, model, valid_error)
+            train_time.append(time_cost)
+            log.show_epoch_error(runId, epoch, monitor, epoch_loss, valid_error, train_time)
+            plotter.append_epochs(valid_error)
+            if monitor.early_stop:
+                break
+        model.load_state_dict(monitor.best_model)
+        sum_time = sum(train_time[: monitor.best_epoch])
+        results = model.evaluate_one_epoch(datamodule, 'test')
+        log.show_test_error(runId, monitor, results, sum_time)
+        # Save the best model parameters
+        makedir('./checkpoints')
+        model_path = f'./checkpoints/{log_filename}_{args.seed}.pt'
+        torch.save(monitor.best_model, model_path)
+        log.only_print(f'Model parameters saved to {model_path}')
     return results
 
 
